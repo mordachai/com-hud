@@ -43,6 +43,10 @@ Once installed and activated, the HUD will automatically appear when a character
     - Grey (0): will do nothing to the roll. If a tag has no use in the next roll let it be like this
 4. Click the corresponding move macro in the macro hotbar.
 
+_**Note:** Check how on the roll card in the chat window the total modifier (⚡) displays the correct value with the status and tags summed up._
+
+![image](https://github.com/user-attachments/assets/df4d8706-5794-45bd-ac39-d0c8a7258e47)
+
 The results and move effects will be automatically displayed in the chat.
 
 ## Known Issues
