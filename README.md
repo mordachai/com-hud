@@ -1,15 +1,14 @@
 # City of Mist: Character HUD
 
-**City of Mist: Character HUD** is a simple always-open, never-in-the-way HUD that allows players to select tags and statuses to be used in rolls. No questions, no menus, just select and roll using the moves in the hotbar. Fast and stramloine like any action packed game should be!
+**City of Mist: Character HUD** is a simple always-open, never-in-the-way HUD that allows players to select tags and statuses to be used in rolls. No questions, no menus. Just select and roll using the moves in the hotbar. Fast and streamlined like any _action packed game_ should be!
 
 ![image](https://github.com/user-attachments/assets/7667f879-60de-4082-90b8-a84808ee8af6)
-
 
 ## Features
 
 - **Always-visible HUD**: Provides quick access to theme tags and statuses. You only have to select a PC token
 - **Auto-Localization**: Automatically translates theme and move names based on the game language
-- **Macro Integration**: Auto-loads macros for core moves and cinematic moves> core moves on page 1 and cinematic moves in page 2
+- **Hotbar Integration**: Auto-loads macros for core moves and cinematic moves: core moves on page 1 and cinematic moves in page 2 of the macro hotbar
 - **Quick Roll Support**: Allows rolling with selected tags and themes without navigating away from the HUD
 - **Draggable**: Drag it around, see your game while you're playing it!
 
@@ -24,7 +23,7 @@ OR
 
 1. Paste the following manifest URL into the bottom Manifest URL field:
 
-https://github.com/mordachai/com-hud/raw/main/module.json
+    https://github.com/mordachai/com-hud/raw/main/module.json
 
 2. Enable the module in your Game Settings under Manage Modules
 
@@ -46,8 +45,8 @@ The results, along with move effects, will be automatically displayed in the cha
 
 ## Known Issues
 
-- If you close the HUD you will need to select another char and then select your to update
-- The selection is not bidirectional. Use the normal character sheet to register anything, the HUD is intended only for rolls.
+- If you close the HUD you will need to select another char and then select yours to update
+- The inputs are not bidirectional. Use the normal character sheet to register anything, the only purpose of the HUD is to make rolls easier and fast.
 
 ## Compatibility
 

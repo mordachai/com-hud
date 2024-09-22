@@ -201,19 +201,22 @@
 
 .ch-status {
   color: white;
+  font-style: italic;
   padding: 1px 3px;
   text-wrap: nowrap;
+  border-radius: 2px;
 }
 
 .status-neutral {
-  background-color: rgba(128, 128, 128, 0.7);
+  background-color: rgba(187, 187, 187, 0.777);
 }
 
 .status-positive {
-  background-color: rgba(0, 128, 0, 0.7);
+  background-color: rgba(34, 132, 230, 0.812);
 }
 
 .status-negative {
-  background-color: rgba(255, 0, 0, 0.7);
+  background-color: rgba(255, 230, 88, 0.91);
+  color: black;
 }
 
