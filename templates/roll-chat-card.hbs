@@ -1,0 +1,42 @@
+<div class ="ch-actor-name">{{actorName}}</div>
+<div class ="ch-move-name">{{moveName}}</div> 
+
+<hr>
+<!-- Display dice results -->
+<div class="dice-container">
+        <!-- Display dice results -->
+    <ol class="ch-dice-rolls">
+        {{#each diceRolls}}
+        <li class="ch-die-d6">{{this}}</li> <!-- Display each dice result -->
+        {{/each}}
+    </ol>
+    
+    {{{powerAmount}}} <div class="ch-roll-total">{{rollTotal}}</div>
+    
+</div>
+
+<hr>
+
+<!-- Display power and weakness tags -->
+<div>
+    <ul class="roll-modifiers">
+        {{#each powerTags}}
+        <li class="ch-pwtag-display">{{this}}</li>
+        {{/each}}
+    </ul>
+    <ul class="roll-modifiers">
+        {{#each weaknessTags}}
+        <li class="ch-wktag-display">{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+
+<div>{{moveOutcome}}</div> <!-- Move Outcome -->
+
+<!-- Display move effects -->
+    <ul class="ch-move-list">
+    {{#each moveEffects}}
+    <li>{{this}}</li> <!-- Display each move effect -->
+    {{/each}}
+</ul>
+

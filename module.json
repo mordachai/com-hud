@@ -1,0 +1,42 @@
+{
+  "id": "com-hud",
+  "title": "City of Mist: Character HUD",
+  "description": "A simple always-open, never-in-the-way HUD that allows players to select tags and statuses to be used in rolls. No questions, no menus, just select and roll using the moves in the hotbar.",
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum": "12",
+    "verified": "12"
+  },
+  "authors": [
+    {
+      "name": "Gus",
+      "flags": {}
+    }
+  ],
+  "packs": [
+    {
+      "name": "com-hud-macros",
+      "label": "HUD Macros",
+      "path": "packs/macros",
+      "type": "Macro",
+      "system": "city-of-mist",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    }
+  ],
+  "styles": [
+    "styles/com-hud.css",
+    "styles/ch-roll.css"
+  ],
+  "esmodules": [
+    "scripts/roll-move.js",
+    "scripts/com-hud.js",
+    "scripts/load-macros.js"
+  ],
+  "url": "https://github.com/mordachai/com-hud",
+  "manifest": "https://github.com/mordachai/com-hud/raw/main/module.json",
+  "download": "https://github.com/mordachai/com-hud/raw/refs/heads/main/com-hud.zip",
+  "license": "https://raw.githubusercontent.com/mordachai/com-hud/refs/heads/main/LICENSE"
+}

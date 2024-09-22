@@ -1,0 +1,136 @@
+/* Chat message base */
+.ch-roll {
+    background-color: rgba(34, 34, 34, 0.8);
+    color: rgb(0, 0, 0);
+    border: 1px solid #444;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-family: 'Roboto', sans-serif;
+}
+
+/* Header style */
+.ch-roll .message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #555;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+.ch-actor-name{
+    font-size: 1.4em;
+    font-family: 'Rift Bold', sans-serif; 
+    margin: 15px 0;
+    text-align: center;
+}
+
+.ch-move-name {
+    font-size: 1.7em;
+    font-family: 'Rift Bold', sans-serif;
+    text-shadow: 0px 2px 4px var(--mythos-bright);
+    text-align: center;
+    text-wrap: pretty;
+    line-height: normal;
+}
+
+/* Dice roll display */
+.ch-dice-rolls {
+    display: flex;
+    gap: 10px;
+    padding: 5px 0;
+    justify-content: center;
+}
+
+.dice-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+/* Adjust the dice appearance */
+.ch-die-d6 {
+    background-color: #391536;
+    color: white;
+    border-radius: 6px;
+    border: 2px solid #fff;
+    box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.5);
+    font-weight: bold;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Rift Bold', sans-serif;
+    font-size: x-large;
+    text-shadow: 0px 1px 2px rgb(243, 26, 113);
+}
+
+/* Modifier styling */
+.ch-modifier {
+    font-size: 1.7em;
+    font-weight: bold;
+    color: #555; /* Light grey for the modifier */
+    vertical-align: middle;
+    text-wrap: nowrap;
+}
+
+/* Power tags and roll modifiers */
+.ch-pwtag-display {
+    display: inline-block;
+    background-color: #0064ce;
+    color: white;
+    border-radius: 3px;
+    padding: 2px 6px;
+    margin-right: 5px;
+    font-size: 0.85em;
+    margin: 2px;
+    font-family: 'Roboto', sans-serif;
+}
+
+/* Weakness tags and roll modifiers */
+.ch-wktag-display {
+    display: inline-block;
+    background-color: #da4500;
+    color: white;
+    border-radius: 3px;
+    padding: 2px 6px;
+    margin-right: 5px;
+    font-size: 0.85em;
+    margin: 2px;
+    font-family: 'Roboto', sans-serif;
+}
+
+/* Roll total */
+.ch-roll-total {
+    font-weight: bold;
+    font-size: 2.3em;
+    margin-top: 5px;
+    text-wrap: nowrap;
+}
+
+.no-bullets {
+    list-style: none;
+}
+
+/* Outcome section */
+.ch-move-text {
+    padding: 10px;
+    background-color: rgba(50, 50, 50, 0.9);
+    border-radius: 5px;
+    margin: 5px 0;
+}
+
+/* List of additional effects */
+.ch-move-list {
+    padding-left: 15px;
+    color: #000000;
+}
+
+.ch-move-list li {
+    margin-bottom: 5px;
+    padding-left: 5px;
+    color: #000000;
+}
