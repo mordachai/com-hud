@@ -1,16 +1,16 @@
 # City of Mist: Character HUD
 
-**City of Mist: Character HUD** is a simple always-open, never-in-the-way HUD that allows players to select tags and statuses to be used in rolls. No questions, no menus. Just select and roll using the moves in the hotbar. Fast and streamlined like any _action packed game_ should be!
+**City of Mist: Character HUD** is a simple always-open, never-in-the-way HUD that allows players to select tags and statuses to be used on move rolls. No questions, no menus. Just select and roll using the moves in the hotbar. Fast and streamlined like any _action-packed game_ should be!
 
 ![image](https://github.com/user-attachments/assets/7667f879-60de-4082-90b8-a84808ee8af6)
 
 ## Features
 
 - **Always-visible HUD**: Provides quick access to theme tags and statuses. You only have to select a PC token
-- **Auto-Localization**: Automatically translates theme and move names based on the game language
-- **Hotbar Integration**: Auto-loads macros for core moves and cinematic moves: core moves on page 1 and cinematic moves in page 2 of the macro hotbar
+- **Auto-Localization**: Automatically translates theme and moves names based on the game language
+- **Hotbar Integration**: Auto-loads macros for core moves and cinematic moves: core moves on page 1 and cinematic moves on page 2 of the Macro Hotbar
 - **Quick Roll Support**: Allows rolling with selected tags and themes without navigating away from the HUD
-- **Draggable**: Drag it around, see your game while you're playing it!
+- **Draggable**: Drag it around, see your game while playing it!
 
 ## Installation
 
@@ -33,24 +33,26 @@ Once installed and activated, the HUD will automatically appear when a character
 
 ### Rolling a Move: Tags and Statuses
 
+![image](https://github.com/user-attachments/assets/4c231f58-fbee-4029-aad0-3cf5316da091)
+
 1. Select your character token.
 2. Choose tags (Power/Weakness) from the HUD.
-3. Choose statuses. Click over than to toggle if they are positive, negative or neutral:
+3. Choose statuses. Click over them to toggle if they are positive, negative, or neutral:
     - Blue (+): will add to the tags calculated in the roll
     - Yellow (-): will subtract from the tags calculated in the roll
-    - Grey (0): will do nothing to the roll. If a tag has no use in the next roll let it like this
+    - Grey (0): will do nothing to the roll. If a tag has no use in the next roll let it be like this
 4. Click the corresponding move macro in the macro hotbar.
 
-The results, along with move effects, will be automatically displayed in the chat.
+The results and move effects will be automatically displayed in the chat.
 
 ## Known Issues
 
-- If you close the HUD you will need to select another char and then select yours to update
+- If you close the HUD you will need deselect than select your token again to bring the HUD back
 - The inputs are not bidirectional. Use the normal character sheet to register anything, the only purpose of the HUD is to make rolls easier and fast.
 
 ## Compatibility
 
-This module is designed for use with Foundry VTT version 12.0 or higher and the City of Mist system.
+This module is designed for Foundry VTT version 12.0 or higher and the City of Mist system.
 
 ## License
 
