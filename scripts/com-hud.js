@@ -371,14 +371,18 @@ function createThemeElement(actor, theme, isMythos, isLogos) {
   container.className = 'com-hud-theme'; // base class for themes
 
   let icon = '';
+  let themeClass = ''; // New variable to store the CSS class based on the theme type
+
   if (isMythos) {
     icon = '<i class="fas fa-bolt"></i> '; // Mythos icon
+    themeClass = 'com-hud-theme-name-mythos'; // Apply Mythos-specific CSS class
   } else if (isLogos) {
     icon = '<i class="fas fa-mask"></i> '; // Logos icon
+    themeClass = 'com-hud-theme-name-logos'; // Apply Logos-specific CSS class
   }
 
   const title = document.createElement('h3');
-  title.className = 'com-hud-theme-name';
+  title.className = `com-hud-theme-name ${themeClass}`; // Apply the correct theme class
 
   // Normalize the themebook name for localization
   const normalizedThemebookName = theme.system.themebook_name.toLowerCase().replace(/\s+/g, '');
@@ -420,6 +424,7 @@ function createThemeElement(actor, theme, isMythos, isLogos) {
 
   return container;
 }
+
 
 function createTagElement(actor, tag, tagType) {
   const listItem = document.createElement('li');

@@ -350,6 +350,7 @@ CityOfMistRolls.rollMove = async function(moveName, isDynamite = false) {
     }
 
     // "Look Beyond the Mist" Move (Mythos-based)
+    // "Look Beyond the Mist" Move (Mythos-based)
     if (moveName === "Look Beyond the Mist") {
         const mythosCount = themes.filter(theme => {
             const normalizedThemeName = theme.system.themebook_name.toLowerCase().replace(/\s+/g, '');
@@ -359,38 +360,45 @@ CityOfMistRolls.rollMove = async function(moveName, isDynamite = false) {
             // Exclude the __LOADOUT__ theme
             return isMythos && theme.name.toLowerCase() !== "__loadout__";
         }).length;
-    
+
         if (mythosCount === 0) {
             ui.notifications.warn("You have no Mythos themes, so you cannot use 'Look Beyond the Mist'.");
             return;
         }
-    
+
         let roll = new Roll("2d6");
         await roll.evaluate({async: true});
         if (game.dice3d) {
             await game.dice3d.showForRoll(roll);
         }
-    
+
         const diceResult = roll.dice[0].results.map(i => i.result);
         const rollTotal = roll.total + mythosCount;
         const outcome = rollTotal <= 6 ? game.i18n.localize(moveData.fail) :
                         rollTotal <= 9 ? game.i18n.localize(moveData.partial) :
                         game.i18n.localize(moveData.success);
-    
+
+        const powerAmount = mythosCount;  // Ensure PWR is updated correctly with Mythos count
+        const localizedEffects = (rollTotal <= 9 ? moveData.partialEffects : moveData.successEffects).map(effect => game.i18n.localize(effect));
+
+        // Replace PWR text in the outcome string
+        const finalOutcome = CityOfMistRolls.substituteText(outcome, powerAmount, powerAmount);
+
         const messageContent = await renderTemplate("modules/com-hud/templates/roll-chat-card.hbs", {
             actorName: actor.name,
             moveName: game.i18n.localize(moveData.name),
             diceRolls: diceResult,
-            powerAmount: `<span class="ch-modifier">+<i class="fa-light fa-bolt"></i> ${mythosCount}: </span>`,
+            powerAmount: `<span class="ch-modifier">+<i class="fa-light fa-bolt"></i> ${powerAmount}: </span>`, // Ensure correct PWR display
             rollTotal: rollTotal,
-            moveOutcome: outcome,
-            moveEffects: []
+            moveOutcome: finalOutcome,
+            moveEffects: localizedEffects // Apply the correct effects
         });
-    
+
         ChatMessage.create({ content: messageContent });
-        await actor.setFlag("com-hud", "selectedTags", []);
+        await actor.setFlag("com-hud", "selectedTags", []);  // Clear selected tags
         return;
     }
+
     
 
     // "Stop Holding Back" Move (Logos-based)
