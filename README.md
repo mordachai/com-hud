@@ -37,6 +37,7 @@ Once installed and activated, the HUD will automatically appear when a character
 
 1. Select your character token.
 2. Choose tags (Power/Weakness) from the HUD.
+    - You can manually burn tags after they are used on a roll. Burned tags cannot be selected, click on the fire icon again to "unburn" the tag.
 3. Choose statuses. Click over them to toggle if they are positive, negative, or neutral:
     - Blue (+): will add to the tags calculated in the roll
     - Yellow (-): will subtract from the tags calculated in the roll
