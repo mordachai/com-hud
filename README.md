@@ -33,7 +33,7 @@ Once installed and activated, the HUD will automatically appear when a character
 
 ### Rolling a Move: Tags and Statuses
 
-![image](https://github.com/user-attachments/assets/4c231f58-fbee-4029-aad0-3cf5316da091)
+![image](https://github.com/user-attachments/assets/b7a3140e-e2d7-4fc7-90be-367f229b9d52)
 
 1. Select your character token.
 2. Choose tags (Power/Weakness) from the HUD.
