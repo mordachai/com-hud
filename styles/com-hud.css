@@ -53,6 +53,30 @@
   display: none;
 }
 
+.com-hud-title-bar {
+  display: flex;
+  align-items: center;
+}
+
+.com-hud-pin {
+  margin-right: 10px;
+  cursor: pointer;
+  color: #ccc;
+}
+
+.com-hud-pin.active {
+  color: gold;
+}
+
+.com-hud-title-bar .com-hud-character-name {
+  flex-grow: 1;
+}
+
+.com-hud-title-bar i {
+  margin-left: 10px;
+  cursor: pointer;
+}
+
 /* Theme container */
 .com-hud-theme {
   margin-bottom: 15px;
@@ -271,5 +295,3 @@
   text-align: center;
   border-bottom: 1px solid #ddd;
 }
-
-

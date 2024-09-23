@@ -1,4 +1,4 @@
-let currentHudInstance = null;
+let currentHudInstances = {}; // Keep track of all open HUD instances
 
 // Define themebook names for Mythos and Logos themes
 const mythosThemes = ["Adaptation", "Advanced Art", "Bastion", "Conjuration", "Divination", "Enclave", "Esoterica", "Expression", "Familiar", "Mobility", "Relic", "Shrouding"].map(theme => theme.toLowerCase().replace(/\s+/g, ''));
@@ -41,10 +41,9 @@ function getLocalizedThemes(themeKeys) {
   return themeKeys.map(key => game.i18n.localize(key));
 }
 
-
 Hooks.once('init', () => {
   console.log('City of Mist: Char HUD | Initializing module');
-  
+
   // Register debug mode setting
   game.settings.register("com-hud", "debug", {
     name: "Debug Mode",
@@ -60,6 +59,72 @@ Hooks.once('init', () => {
 let localizedMythosThemes = [];
 let localizedLogosThemes = [];
 
+// Helper functions to manage HUD and Statuses state using user flags
+async function getHUDState(actorId) {
+  const user = game.user;
+  const hudStates = (await user.getFlag("com-hud", "hudStates")) || {};
+  let state = hudStates[actorId];
+
+  // Debugging log
+  console.log(`Getting HUD state for Actor ID: ${actorId}`, state);
+
+  // Handle migration from string to object if necessary
+  if (typeof state === 'string') {
+    console.warn(`Migrating HUD state for Actor ID: ${actorId} from string to object.`);
+    state = { state: state, pinned: false };
+    hudStates[actorId] = state;
+    await user.setFlag("com-hud", "hudStates", hudStates);
+  }
+
+  // Ensure state is an object
+  if (typeof state !== 'object' || state === null) {
+    console.warn(`Invalid HUD state for Actor ID: ${actorId}. Resetting to default.`);
+    state = { state: "expanded", pinned: false };
+    hudStates[actorId] = state;
+    await user.setFlag("com-hud", "hudStates", hudStates);
+  }
+
+  return state;
+}
+
+async function setHUDState(actorId, hudState) {
+  const user = game.user;
+  const hudStates = (await user.getFlag("com-hud", "hudStates")) || {};
+  hudStates[actorId] = hudState;
+
+  // Debugging log
+  console.log(`Setting HUD state for Actor ID: ${actorId}`, hudState);
+
+  await user.setFlag("com-hud", "hudStates", hudStates);
+}
+
+async function getStatusState(actorId) {
+  const user = game.user;
+  const statusStates = (await user.getFlag("com-hud", "statusStates")) || {};
+  return statusStates[actorId] || "expanded";
+}
+
+async function setStatusState(actorId, state) {
+  const user = game.user;
+  const statusStates = (await user.getFlag("com-hud", "statusStates")) || {};
+  statusStates[actorId] = state;
+  await user.setFlag("com-hud", "statusStates", statusStates);
+}
+
+// Helper functions to manage HUD position using user flags
+async function getHUDPosition(actorId) {
+  const user = game.user;
+  const positions = (await user.getFlag("com-hud", "positions")) || {};
+  return positions[actorId] || { top: '20px', left: '20px' }; // Default position
+}
+
+async function setHUDPosition(actorId, position) {
+  const user = game.user;
+  const positions = (await user.getFlag("com-hud", "positions")) || {};
+  positions[actorId] = position;
+  await user.setFlag("com-hud", "positions", positions);
+}
+
 Hooks.once('ready', async () => {
   // Localize the themes after the game is fully initialized
   localizedMythosThemes = getLocalizedThemes(mythosThemesKeys);
@@ -71,180 +136,266 @@ Hooks.once('ready', async () => {
   }
 
   // Initial render for the controlled token (if any)
-  updateHUDForSelectedToken();
+  await updateHUDForSelectedToken();
 });
 
-    Hooks.on('updateActor', (updatedActor, updateData) => {
-      const controlled = canvas.tokens.controlled[0];
-      if (controlled && controlled.actor.id === updatedActor.id) {
-        console.log(`Actor ${updatedActor.name} was updated. Updating HUD.`);
-        console.log("Update Data:", updateData);
+// Handle actor updates
+Hooks.on('updateActor', async (updatedActor, updateData) => {
+  if (currentHudInstances[updatedActor.id]) {
+    await updateExistingHUD(updatedActor);
+  }
+});
 
-        // Check if only flags have been updated (skip update if only flags were changed)
-        if (Object.keys(updateData).length === 1 && updateData.flags) {
-          console.log("Only flags were updated. Skipping HUD update.");
-          return;
-        }
+// Handle token control changes
+Hooks.on('controlToken', async (token, controlled) => {
+  if (controlled) {
+    await updateHUDForSelectedToken();
+  }
+});
 
-        updateExistingHUD(updatedActor);
-      }
-    });
-  
-    Hooks.on('controlToken', (token, controlled) => {
-      if (controlled) {
-        updateHUDForSelectedToken();
-      } else {
-        if (currentHudInstance) {
-          currentHudInstance.remove();
-          currentHudInstance = null;
-        }
-      }
-    });
-  
-  // Listen for updates to any actor and re-render HUD when changes occur
-  Hooks.on('updateActor', (updatedActor, updateData) => {
-    const controlled = canvas.tokens.controlled[0];
-    if (controlled && controlled.actor.id === updatedActor.id) {
-      console.log(`Actor ${updatedActor.name} was updated. Re-rendering HUD.`);
-      console.log("Update Data:", updateData); // Log the update data for debugging
-      renderHUD(updatedActor);
-    }
-  });
+// Function to update HUD for the selected token
+async function updateHUDForSelectedToken() {
+  const controlled = canvas.tokens.controlled[0];
+  if (!controlled) return;
 
-  function updateHUDForSelectedToken() {
-    const controlled = canvas.tokens.controlled[0];
-    if (!controlled) {
-      if (currentHudInstance) {
-        currentHudInstance.remove();
-        currentHudInstance = null;
+  const actor = controlled.actor;
+  if (!actor) return;
+
+  const hudState = await getHUDState(actor.id);
+
+  if (!hudState.pinned) {
+    // Close all unpinned HUDs
+    for (let actorId in currentHudInstances) {
+      const hudInstance = currentHudInstances[actorId];
+      const state = await getHUDState(actorId);
+      if (!state.pinned) {
+        hudInstance.remove();
+        delete currentHudInstances[actorId];
       }
-      return;
-    }
-  
-    const actor = controlled.actor;
-    if (!actor) return;
-  
-    if (currentHudInstance) {
-      updateExistingHUD(actor);
-    } else {
-      renderHUD(actor);
     }
   }
-  
-  // Add this new function to update the existing HUD:
-  function updateExistingHUD(actor) {
-    if (!currentHudInstance) return;
-  
-    const contentWrapper = currentHudInstance.querySelector('.com-hud-content-wrapper');
-    if (!contentWrapper) return;
-  
-    contentWrapper.innerHTML = ''; // Clear existing content
-  
-    // Re-add Themes (filter out 'Loadout')
-    actor.items
-      .filter(i => i.type === "theme" && i.name.toLowerCase() !== "__loadout__")
-      .forEach(theme => {
-        const isMythos = mythosThemes.includes(theme.system.themebook_name.toLowerCase().replace(/\s+/g, ''));
-        const isLogos = logosThemes.includes(theme.system.themebook_name.toLowerCase().replace(/\s+/g, ''));
-        const themeElement = createThemeElement(actor, theme, isMythos, isLogos);
-        contentWrapper.appendChild(themeElement);
-      });
-  
-    // Re-add Status Section
-    const statusSection = document.createElement('div');
-    statusSection.className = 'com-hud-status-section';
-    statusSection.innerHTML = `
-      <div class="com-hud-status-header">Statuses <i class="fas fa-chevron-down com-hud-status-toggle"></i></div>
-      <div class="com-hud-status-list"></div>
-    `;
-  
-    const statusList = statusSection.querySelector('.com-hud-status-list');
-    actor.items.filter(i => i.type === "status").forEach(status => {
-      const statusElement = createStatusElement(actor, status);
-      statusList.appendChild(statusElement);
-    });
-  
-    contentWrapper.appendChild(statusSection);
-  
-    // Update the character name
-    const characterNameElement = currentHudInstance.querySelector('.com-hud-character-name');
-    if (characterNameElement) {
-      characterNameElement.textContent = actor.name;
-    }
-  
-    // Adjust the container height
-    adjustContainerHeight(currentHudInstance);
+
+  if (currentHudInstances[actor.id]) {
+    await updateExistingHUD(actor);
+  } else {
+    await renderHUD(actor);
   }
-  
+}
 
+// Function to update the existing HUD while preserving state
+async function updateExistingHUD(actor) {
+  const hudContainer = currentHudInstances[actor.id];
+  if (!hudContainer) return;
 
-// Function to update the status section
-function updateStatusSection(actor) {
-  const statusList = document.querySelector('.com-hud-status-list');
-  if (!statusList) return;
+  const contentWrapper = hudContainer.querySelector('.com-hud-content-wrapper');
+  if (!contentWrapper) return;
 
-  // Clear the current list and repopulate it with updated statuses
-  statusList.innerHTML = '';
-  
+  contentWrapper.innerHTML = ''; // Clear existing content
+
+  // Re-add Themes (filter out 'Loadout')
+  actor.items
+    .filter(i => i.type === "theme" && i.name.toLowerCase() !== "__loadout__")
+    .forEach(theme => {
+      const isMythos = mythosThemes.includes(theme.system.themebook_name.toLowerCase().replace(/\s+/g, ''));
+      const isLogos = logosThemes.includes(theme.system.themebook_name.toLowerCase().replace(/\s+/g, ''));
+      const themeElement = createThemeElement(actor, theme, isMythos, isLogos);
+      contentWrapper.appendChild(themeElement);
+    });
+
+  // Re-add Status Section
+  const statusSection = document.createElement('div');
+  statusSection.className = 'com-hud-status-section';
+  statusSection.innerHTML = `
+    <div class="com-hud-status-header">Statuses <i class="fas fa-chevron-down com-hud-status-toggle"></i></div>
+    <div class="com-hud-status-list"></div>
+  `;
+
+  const statusList = statusSection.querySelector('.com-hud-status-list');
+  const statusToggle = statusSection.querySelector('.com-hud-status-toggle');
+
+  // Add status items (filter by type: "status")
   actor.items.filter(i => i.type === "status").forEach(status => {
     const statusElement = createStatusElement(actor, status);
     statusList.appendChild(statusElement);
   });
+
+  contentWrapper.appendChild(statusSection);
+
+  // Fetch and apply the saved HUD state
+  const hudState = await getHUDState(actor.id);
+  const toggleIcon = hudContainer.querySelector('.com-hud-toggle');
+  const pinIcon = hudContainer.querySelector('.com-hud-pin');
+
+  if (hudState.state === "collapsed") {
+    hudContainer.classList.add('com-hud-minimized');
+    toggleIcon.classList.remove('fa-chevron-up');
+    toggleIcon.classList.add('fa-chevron-down');
+  } else {
+    hudContainer.classList.remove('com-hud-minimized');
+    toggleIcon.classList.remove('fa-chevron-down');
+    toggleIcon.classList.add('fa-chevron-up');
+  }
+
+  if (hudState.pinned) {
+    hudContainer.classList.add('com-hud-pinned');
+    pinIcon.classList.add('active');
+  } else {
+    hudContainer.classList.remove('com-hud-pinned');
+    pinIcon.classList.remove('active');
+  }
+
+  // Fetch and apply the saved Statuses state
+  const savedStatusState = await getStatusState(actor.id);
+  if (savedStatusState === "collapsed") {
+    statusList.classList.add('hidden');
+    statusToggle.classList.remove('fa-chevron-down');
+    statusToggle.classList.add('fa-chevron-up');
+  } else {
+    statusList.classList.remove('hidden');
+    statusToggle.classList.remove('fa-chevron-up');
+    statusToggle.classList.add('fa-chevron-down');
+  }
+
+  // Update the character name
+  const characterNameElement = hudContainer.querySelector('.com-hud-character-name');
+  if (characterNameElement) {
+    characterNameElement.textContent = actor.name;
+  }
+
+  // Re-attach event listeners for toggles to preserve state
+  toggleIcon.onclick = async (e) => {
+    e.stopPropagation();
+    const isMinimized = hudContainer.classList.toggle('com-hud-minimized');
+    toggleIcon.classList.toggle('fa-chevron-up');
+    toggleIcon.classList.toggle('fa-chevron-down');
+    hudState.state = isMinimized ? "collapsed" : "expanded";
+    await setHUDState(actor.id, hudState);
+    adjustContainerHeight(hudContainer);
+  };
+
+  statusToggle.onclick = async (e) => {
+    e.stopPropagation();
+    const isHidden = statusList.classList.toggle('hidden');
+    statusToggle.classList.toggle('fa-chevron-down');
+    statusToggle.classList.toggle('fa-chevron-up');
+    await setStatusState(actor.id, isHidden ? "collapsed" : "expanded");
+  };
+
+  // Re-attach event listener to pinIcon
+  pinIcon.onclick = async (e) => {
+    e.stopPropagation();
+    hudState.pinned = !hudState.pinned;
+    if (hudState.pinned) {
+      hudContainer.classList.add('com-hud-pinned');
+      pinIcon.classList.add('active');
+      console.log(`HUD for Actor ID: ${actor.id} pinned.`);
+    } else {
+      hudContainer.classList.remove('com-hud-pinned');
+      pinIcon.classList.remove('active');
+      console.log(`HUD for Actor ID: ${actor.id} unpinned.`);
+    }
+    await setHUDState(actor.id, hudState);
+  };
+
+  // Adjust the container height
+  adjustContainerHeight(hudContainer);
 }
 
-// Function to render HUD (keep only one declaration)
-function renderHUD(actor) {
 
-  if (currentHudInstance) {
-    currentHudInstance.remove();
+// Function to render HUD (now async to handle state retrieval)
+async function renderHUD(actor) {
+  if (currentHudInstances[actor.id]) {
+    currentHudInstances[actor.id].remove();
   }
 
   const hudContainer = document.createElement('div');
   hudContainer.className = 'com-hud-container';
+  hudContainer.dataset.actorId = actor.id; // Store actor ID
 
   const titleBar = document.createElement('div');
   titleBar.className = 'com-hud-title-bar';
   titleBar.innerHTML = `
+    <i class="fas fa-thumbtack com-hud-pin"></i>
     <span class="com-hud-character-name">${actor.name}</span>
     <i class="fas fa-chevron-up com-hud-toggle"></i>
     <i class="fas fa-times com-hud-close"></i>
   `;
   
-  // Toggle section logic
+  hudContainer.appendChild(titleBar);
+
   const toggleIcon = titleBar.querySelector('.com-hud-toggle');
-  toggleIcon.addEventListener('click', (e) => {
+  const closeIcon = titleBar.querySelector('.com-hud-close');
+  const pinIcon = titleBar.querySelector('.com-hud-pin');
+
+  // Fetch and apply the saved HUD state
+  const hudState = await getHUDState(actor.id);
+  if (hudState.state === "collapsed") {
+    hudContainer.classList.add('com-hud-minimized');
+    toggleIcon.classList.remove('fa-chevron-up');
+    toggleIcon.classList.add('fa-chevron-down');
+  } else {
+    hudContainer.classList.remove('com-hud-minimized');
+    toggleIcon.classList.remove('fa-chevron-down');
+    toggleIcon.classList.add('fa-chevron-up');
+  }
+
+  if (hudState.pinned) {
+    hudContainer.classList.add('com-hud-pinned');
+    pinIcon.classList.add('active');
+  }
+
+  // Toggle section logic with state preservation
+  toggleIcon.addEventListener('click', async (e) => {
     e.stopPropagation();
-    hudContainer.classList.toggle('com-hud-minimized');
+    const isMinimized = hudContainer.classList.toggle('com-hud-minimized');
     toggleIcon.classList.toggle('fa-chevron-up');
     toggleIcon.classList.toggle('fa-chevron-down');
+    hudState.state = isMinimized ? "collapsed" : "expanded";
+    await setHUDState(actor.id, hudState);
     adjustContainerHeight(hudContainer);
   });
 
-  const closeIcon = titleBar.querySelector('.com-hud-close');
-  closeIcon.addEventListener('click', (e) => {
+  // Close HUD logic
+  closeIcon.addEventListener('click', async (e) => {
     e.stopPropagation();
     hudContainer.remove();
+    delete currentHudInstances[actor.id];
+    hudState.pinned = false; // Unpin when closed
+    await setHUDState(actor.id, hudState);
+    console.log(`HUD for Actor ID: ${actor.id} closed and unpinned.`);
   });
 
-  hudContainer.appendChild(titleBar);
+  // Pin HUD logic
+  pinIcon.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    hudState.pinned = !hudState.pinned;
+    if (hudState.pinned) {
+      hudContainer.classList.add('com-hud-pinned');
+      pinIcon.classList.add('active');
+      console.log(`HUD for Actor ID: ${actor.id} pinned.`);
+    } else {
+      hudContainer.classList.remove('com-hud-pinned');
+      pinIcon.classList.remove('active');
+      console.log(`HUD for Actor ID: ${actor.id} unpinned.`);
+    }
+    await setHUDState(actor.id, hudState);
+  });
 
   const contentWrapper = document.createElement('div');
   contentWrapper.className = 'com-hud-content-wrapper';
 
-// Add Themes (filter out 'Loadout')
-actor.items
-  .filter(i => i.type === "theme" && 
-               i.name.toLowerCase() !== "__loadout__" && 
-               (mythosThemes.includes(i.system.themebook_name.toLowerCase().replace(/\s+/g, '')) ||
-                logosThemes.includes(i.system.themebook_name.toLowerCase().replace(/\s+/g, ''))))
-  .forEach(theme => {
-    const isMythos = mythosThemes.includes(theme.system.themebook_name.toLowerCase().replace(/\s+/g, ''));
-    const isLogos = logosThemes.includes(theme.system.themebook_name.toLowerCase().replace(/\s+/g, ''));
-    const themeElement = createThemeElement(actor, theme, isMythos, isLogos);
-    contentWrapper.appendChild(themeElement);
-  });
-
-
+  // Add Themes (filter out 'Loadout')
+  actor.items
+    .filter(i => i.type === "theme" && 
+                 i.name.toLowerCase() !== "__loadout__" && 
+                 (mythosThemes.includes(i.system.themebook_name.toLowerCase().replace(/\s+/g, '')) ||
+                  logosThemes.includes(i.system.themebook_name.toLowerCase().replace(/\s+/g, ''))))
+    .forEach(theme => {
+      const isMythos = mythosThemes.includes(theme.system.themebook_name.toLowerCase().replace(/\s+/g, ''));
+      const isLogos = logosThemes.includes(theme.system.themebook_name.toLowerCase().replace(/\s+/g, ''));
+      const themeElement = createThemeElement(actor, theme, isMythos, isLogos);
+      contentWrapper.appendChild(themeElement);
+    });
 
   // Add Status Section
   const statusSection = document.createElement('div');
@@ -257,13 +408,6 @@ actor.items
   const statusList = statusSection.querySelector('.com-hud-status-list');
   const statusToggle = statusSection.querySelector('.com-hud-status-toggle');
   
-  // Toggle visibility for the status list
-  statusToggle.addEventListener('click', () => {
-    statusList.classList.toggle('hidden');
-    statusToggle.classList.toggle('fa-chevron-down');
-    statusToggle.classList.toggle('fa-chevron-up');
-  });
-
   // Add status items (filter by type: "status")
   actor.items.filter(i => i.type === "status").forEach(status => {
     const statusElement = createStatusElement(actor, status);
@@ -273,10 +417,34 @@ actor.items
   contentWrapper.appendChild(statusSection);
   hudContainer.appendChild(contentWrapper);
   document.body.appendChild(hudContainer);
-  currentHudInstance = hudContainer;
+  currentHudInstances[actor.id] = hudContainer;
 
-  makeDraggable(hudContainer, titleBar);  // Make HUD draggable
-  adjustContainerHeight(hudContainer);    // Adjust height based on viewport size
+  // Make HUD draggable with user-specific position
+  await makeDraggable(hudContainer, titleBar, actor.id);
+
+  // Fetch and apply the saved Statuses state
+  const statusState = await getStatusState(actor.id);
+  if (statusState === "collapsed") {
+    statusList.classList.add('hidden');
+    statusToggle.classList.remove('fa-chevron-down');
+    statusToggle.classList.add('fa-chevron-up');
+  } else {
+    statusList.classList.remove('hidden');
+    statusToggle.classList.remove('fa-chevron-up');
+    statusToggle.classList.add('fa-chevron-down');
+  }
+
+  // Add event listener to statusToggle to preserve its state
+  statusToggle.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const isHidden = statusList.classList.toggle('hidden');
+    statusToggle.classList.toggle('fa-chevron-down');
+    statusToggle.classList.toggle('fa-chevron-up');
+    await setStatusState(actor.id, isHidden ? "collapsed" : "expanded");
+  });
+
+  adjustContainerHeight(hudContainer);
+  console.log(`HUD for Actor ID: ${actor.id} rendered.`);
 }
 
 // Debug function
@@ -286,13 +454,14 @@ function debugLog(...args) {
   }
 }
 
-// Function to make the HUD draggable
-function makeDraggable(element, dragHandle) {
+// Function to make the HUD draggable with user-specific position
+async function makeDraggable(element, dragHandle, actorId) {
   let posX = 0, posY = 0, initialX = 0, initialY = 0;
   let isDragging = false;
 
-  // Load saved position if available
-  let savedPosition = JSON.parse(localStorage.getItem('com-hud-position')) || { top: '20px', left: '20px' };
+  // Load saved position from user flags
+  const savedPosition = await getHUDPosition(actorId);
+  element.style.position = 'absolute'; // Ensure position is absolute for draggable
   element.style.top = savedPosition.top;
   element.style.left = savedPosition.left;
 
@@ -321,21 +490,21 @@ function makeDraggable(element, dragHandle) {
     element.style.left = (element.offsetLeft - posX) + "px";
   }
 
-  function closeDragElement() {
+  async function closeDragElement() {
     document.onmouseup = null;
     document.onmousemove = null;
 
     if (isDragging) {
-      // Save the position in local storage
-      localStorage.setItem('com-hud-position', JSON.stringify({
+      // Save the new position in user flags
+      await setHUDPosition(actorId, {
         top: element.style.top,
         left: element.style.left
-      }));
+      });
+      console.log(`HUD position for Actor ID: ${actorId} saved.`, { top: element.style.top, left: element.style.left });
       isDragging = false;
     }
   }
 }
-
 
 function adjustContainerHeight(container) {
   const contentWrapper = container.querySelector('.com-hud-content-wrapper');
@@ -425,7 +594,6 @@ function createThemeElement(actor, theme, isMythos, isLogos) {
   return container;
 }
 
-
 function createTagElement(actor, tag, tagType) {
   const listItem = document.createElement('li');
   listItem.className = 'com-hud-tag-item'; 
@@ -470,6 +638,7 @@ function createTagElement(actor, tag, tagType) {
 
     // Store the updated selected tags on the actor
     await actor.setFlag("com-hud", "selectedTags", updatedTags);
+    console.log(`Selected tags for Actor ID: ${actor.id} updated:`, updatedTags);
   });
 
   // Burn/unburn toggle for power tags (optional)
@@ -486,6 +655,7 @@ function createTagElement(actor, tag, tagType) {
 
       // Update the tag's burned state on the actor
       await actor.updateEmbeddedDocuments("Item", [{ _id: tag.id, "system.burned": isBurned }]);
+      console.log(`Tag "${tag.name}" for Actor ID: ${actor.id} burned state updated to: ${isBurned}`);
     });
 
     listItem.appendChild(burnIcon);  // Add the burn/unburn icon next to the label
@@ -515,7 +685,7 @@ function createStatusElement(actor, status) {
   statusNameElement.classList.add(`status-${currentState}`);
 
   // Add click event to change state
-  statusNameElement.addEventListener('click', () => {
+  statusNameElement.addEventListener('click', async () => {
     let newState;
     if (statusNameElement.classList.contains('status-neutral')) {
       newState = 'positive';
@@ -531,7 +701,8 @@ function createStatusElement(actor, status) {
 
     // Update the actor's flag for the selected status
     currentStatuses[status.name] = newState;
-    actor.setFlag("com-hud", "statusEffects", currentStatuses);  // Save updated statuses
+    await actor.setFlag("com-hud", "statusEffects", currentStatuses);  // Save updated statuses
+    console.log(`Status "${status.name}" for Actor ID: ${actor.id} updated to: ${newState}`);
   });
 
   return statusItem;

@@ -1,42 +1,59 @@
-<div class ="ch-actor-name">{{actorName}}</div>
-<div class ="ch-move-name">{{moveName}}</div> 
+<div class="ch-actor-name">{{actorName}}</div>
+<div class="ch-move-name">{{moveName}}</div>
 
 <hr>
-<!-- Display dice results -->
+
+<!-- Dice Results and Modifiers -->
 <div class="dice-container">
-        <!-- Display dice results -->
-    <ol class="ch-dice-rolls">
-        {{#each diceRolls}}
-        <li class="ch-die-d6">{{this}}</li> <!-- Display each dice result -->
-        {{/each}}
-    </ol>
-    
-    {{{powerAmount}}} <div class="ch-roll-total">{{rollTotal}}</div>
-    
+  <!-- Display dice results -->
+  <ol class="ch-dice-rolls">
+    {{#each diceRolls}}
+      <li class="ch-die-d6">{{this}}</li>
+    {{/each}}
+  </ol>
+  
+  <!-- Display modifiers -->
+  <div class="ch-modifiers">
+    {{{modifiers}}}
+  </div>
 </div>
 
 <hr>
 
-<!-- Display power and weakness tags -->
+<!-- Display roll total -->
+  <div class="ch-roll-total">{{{rollTotal}}}</div>
+
+<hr>
+
+<!-- Power and Weakness Tags -->
 <div>
+  <!-- Display power tags if any -->
+  {{#if powerTags.length}}
     <ul class="roll-modifiers">
-        {{#each powerTags}}
+      {{#each powerTags}}
         <li class="ch-pwtag-display">{{this}}</li>
-        {{/each}}
+      {{/each}}
     </ul>
+  {{/if}}
+
+  <!-- Display weakness tags if any -->
+  {{#if weaknessTags.length}}
     <ul class="roll-modifiers">
-        {{#each weaknessTags}}
+      {{#each weaknessTags}}
         <li class="ch-wktag-display">{{this}}</li>
-        {{/each}}
+      {{/each}}
     </ul>
+  {{/if}}
 </div>
 
-<div>{{moveOutcome}}</div> <!-- Move Outcome -->
+<!-- Move Outcome -->
+<div>{{moveOutcome}}</div>
 
-<!-- Display move effects -->
-    <ul class="ch-move-list">
+<!-- Move Effects if any -->
+{{#if moveEffects.length}}
+  <ul class="ch-move-list">
     {{#each moveEffects}}
-    <li>{{this}}</li> <!-- Display each move effect -->
+      <li>{{this}}</li>
     {{/each}}
-</ul>
-
+  </ul>
+{{/if}}

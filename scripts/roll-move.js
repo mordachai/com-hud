@@ -319,226 +319,259 @@ CityOfMistRolls.moveConfig = {
 // Main rollMove function
 CityOfMistRolls.rollMove = async function(moveName, isDynamite = false) {
     const actor = canvas.tokens.controlled[0]?.actor;
-
+  
     if (!actor) {
-        ui.notifications.warn("You must have a token selected to roll a move.");
-        return;
+      ui.notifications.warn("You must have a token selected to roll a move.");
+      return;
     }
-
+  
     // Check if the move is set as dynamite for this actor (character)
     const dynamiteMoves = actor.getFlag("com-hud", "dynamiteMoves") || [];
     if (dynamiteMoves.includes(moveName)) {
-        isDynamite = true;
+      isDynamite = true;
     }
-
+  
     console.log(`Rolling ${moveName} for ${actor.name}. Dynamite: ${isDynamite}`);
-
+  
     // Exclude the __LOADOUT__ theme when calculating themes
     const themes = actor.items.filter(i => i.type === "theme" && i.name.toLowerCase() !== "__loadout__");
     const moveData = this.moveConfig[moveName];
-    
+  
     if (!moveData) {
-        ui.notifications.error(`Move "${moveName}" not found in configuration.`);
-        return;
+      ui.notifications.error(`Move "${moveName}" not found in configuration.`);
+      return;
     }
-
+  
     // Handle cinematic moves with no dice rolling
     if (moveData.moveType === "cinematic") {
-        const outcome = game.i18n.localize(moveData.fail);
-        const moveEffects = moveData.failEffects || moveData.partialEffects || moveData.successEffects || [];
-        const localizedEffects = moveEffects.map(effect => game.i18n.localize(effect));
-
-        const messageContent = await renderTemplate("modules/com-hud/templates/roll-chat-card.hbs", {
-            actorName: actor.name,
-            moveName: game.i18n.localize(moveData.name),
-            diceRolls: [],  // No dice rolls for cinematic moves
-            powerTags: [],
-            weaknessTags: [],
-            powerAmount: [],
-            rollTotal: [],
-            moveOutcome: outcome,
-            moveEffects: localizedEffects
-        });
-
-        ChatMessage.create({ content: messageContent });
-        return;
+      const outcome = game.i18n.localize(moveData.fail);
+      const moveEffects = moveData.failEffects || moveData.partialEffects || moveData.successEffects || [];
+      const localizedEffects = moveEffects.map(effect => game.i18n.localize(effect));
+  
+      const messageContent = await renderTemplate("modules/com-hud/templates/roll-chat-card.hbs", {
+        actorName: actor.name,
+        moveName: game.i18n.localize(moveData.name),
+        diceRolls: [],  // No dice rolls for cinematic moves
+        powerTags: [],
+        weaknessTags: [],
+        modifiers: '',   // No modifiers for cinematic moves
+        rollTotal: '',   // No roll total for cinematic moves
+        moveOutcome: outcome,
+        moveEffects: localizedEffects
+      });
+  
+      ChatMessage.create({ content: messageContent });
+      return;
     }
-
+  
     // "Look Beyond the Mist" Move (Mythos-based)
     if (moveName === "Look Beyond the Mist") {
-        const mythosCount = themes.filter(theme => {
-            const normalizedThemeName = theme.system.themebook_name.toLowerCase().replace(/\s+/g, '');
-            const isMythos = mythosThemes.some(mythosTheme => 
-                normalizedThemeName.includes(mythosTheme.toLowerCase().replace(/\s+/g, ''))
-            );
-            // Exclude the __LOADOUT__ theme
-            return isMythos && theme.name.toLowerCase() !== "__loadout__";
-        }).length;
-
-        if (mythosCount === 0) {
-            ui.notifications.warn("You have no Mythos themes, so you cannot use 'Look Beyond the Mist'.");
-            return;
-        }
-
-        let roll = new Roll("2d6");
-        await roll.evaluate({async: true});
-        if (game.dice3d) {
-            await game.dice3d.showForRoll(roll);
-        }
-
-        const diceResult = roll.dice[0].results.map(i => i.result);
-        const rollTotal = roll.total + mythosCount;
-        const outcome = rollTotal <= 6 ? game.i18n.localize(moveData.fail) :
-                        rollTotal <= 9 ? game.i18n.localize(moveData.partial) :
-                        game.i18n.localize(moveData.success);
-
-        const powerAmount = mythosCount;  // Ensure PWR is updated correctly with Mythos count
-        const localizedEffects = (rollTotal <= 9 ? moveData.partialEffects : moveData.successEffects).map(effect => game.i18n.localize(effect));
-
-        // Replace PWR text in the outcome string
-        const finalOutcome = CityOfMistRolls.substituteText(outcome, powerAmount, powerAmount);
-
-        const messageContent = await renderTemplate("modules/com-hud/templates/roll-chat-card.hbs", {
-            actorName: actor.name,
-            moveName: game.i18n.localize(moveData.name),
-            diceRolls: diceResult,
-            powerAmount: `<span class="ch-modifier">+<i class="fa-light fa-bolt"></i> ${powerAmount}: </span>`, // Ensure correct PWR display
-            rollTotal: rollTotal,
-            moveOutcome: finalOutcome,
-            moveEffects: localizedEffects // Apply the correct effects
-        });
-
-        ChatMessage.create({ content: messageContent });
-        await actor.setFlag("com-hud", "selectedTags", []);  // Clear selected tags
+      const mythosCount = themes.filter(theme => {
+        const normalizedThemeName = theme.system.themebook_name.toLowerCase().replace(/\s+/g, '');
+        const isMythos = mythosThemes.some(mythosTheme => 
+          normalizedThemeName.includes(mythosTheme.toLowerCase().replace(/\s+/g, ''))
+        );
+        // Exclude the __LOADOUT__ theme
+        return isMythos && theme.name.toLowerCase() !== "__loadout__";
+      }).length;
+  
+      if (mythosCount === 0) {
+        ui.notifications.warn("You have no Mythos themes, so you cannot use 'Look Beyond the Mist'.");
         return;
+      }
+  
+      let roll = new Roll("2d6");
+      await roll.evaluate(); // No {async: true}
+      if (game.dice3d) {
+        await game.dice3d.showForRoll(roll);
+      }
+  
+      const diceResult = roll.dice[0].results.map(i => i.result);
+      const rollTotal = roll.total + mythosCount;
+  
+      const outcome = rollTotal <= 6 ? game.i18n.localize(moveData.fail) :
+                      rollTotal <= 9 ? game.i18n.localize(moveData.partial) :
+                      game.i18n.localize(moveData.success);
+  
+      const powerAmount = mythosCount;  // PWR is the number of Mythos themes
+      const localizedEffects = (rollTotal <= 9 ? moveData.partialEffects : moveData.successEffects).map(effect => game.i18n.localize(effect));
+  
+      // Replace PWR text in the outcome string
+      const finalOutcome = CityOfMistRolls.substituteText(outcome, powerAmount, powerAmount);
+  
+      // Prepare display modifiers
+      const displayModifiers = `<span class="ch-modifier"><i class="fa-regular fa-bolt"></i>${powerAmount}</span>`;
+  
+      // Compute displayRollTotal here
+      const displayRollTotal = rollTotal;
+  
+      const messageContent = await renderTemplate("modules/com-hud/templates/roll-chat-card.hbs", {
+        actorName: actor.name,
+        moveName: game.i18n.localize(moveData.name),
+        diceRolls: diceResult,
+        modifiers: displayModifiers,
+        rollTotal: displayRollTotal,
+        moveOutcome: finalOutcome,
+        moveEffects: localizedEffects
+      });
+  
+      ChatMessage.create({ content: messageContent });
+      await actor.setFlag("com-hud", "selectedTags", []);  // Clear selected tags
+      return;
     }
-
-    
-
-    // "Stop Holding Back" Move (Logos-based)
+  
+    // "Stop Holding Back" Moves (Logos-based)
     if (["Stop. Holding. Back. (Significant)", "Stop. Holding. Back. (No Return)", "Stop. Holding. Back. (Ultimate)"].includes(moveName)) {
-        const logosCount = themes.filter(theme => {
-            const normalizedThemeName = theme.system.themebook_name.toLowerCase().replace(/\s+/g, '');
-            const isLogos = logosThemes.some(logosTheme => 
-                normalizedThemeName.includes(logosTheme.toLowerCase().replace(/\s+/g, ''))
-            );
-            // Exclude the __LOADOUT__ theme
-            return isLogos && theme.name.toLowerCase() !== "__loadout__";
-        }).length;
-    
-        if (logosCount === 0) {
-            ui.notifications.warn("You have no Logos themes, so you cannot use 'Stop. Holding. Back.'");
-            return;
-        }
-    
-        let roll = new Roll("2d6");
-        await roll.evaluate({async: true});
-        if (game.dice3d) {
-            await game.dice3d.showForRoll(roll);
-        }
-    
-        const diceResult = roll.dice[0].results.map(i => i.result);
-        const rollTotal = roll.total + logosCount;
-        const outcome = rollTotal <= 6 ? game.i18n.localize(moveData.fail) :
-                        rollTotal <= 9 ? game.i18n.localize(moveData.partial) :
-                        game.i18n.localize(moveData.success);
-    
-        const messageContent = await renderTemplate("modules/com-hud/templates/roll-chat-card.hbs", {
-            actorName: actor.name,
-            moveName: game.i18n.localize(moveData.name),
-            diceRolls: diceResult,
-            powerAmount: `<span class="ch-modifier">+ <i class="fa-light fa-mask"></i> ${logosCount}: </span>`,
-            rollTotal: rollTotal,
-            moveOutcome: outcome,
-            moveEffects: []
-        });
-    
-        ChatMessage.create({ content: messageContent });
-        await actor.setFlag("com-hud", "selectedTags", []);
+      const logosCount = themes.filter(theme => {
+        const normalizedThemeName = theme.system.themebook_name.toLowerCase().replace(/\s+/g, '');
+        const isLogos = logosThemes.some(logosTheme => 
+          normalizedThemeName.includes(logosTheme.toLowerCase().replace(/\s+/g, ''))
+        );
+        // Exclude the __LOADOUT__ theme
+        return isLogos && theme.name.toLowerCase() !== "__loadout__";
+      }).length;
+  
+      if (logosCount === 0) {
+        ui.notifications.warn("You have no Logos themes, so you cannot use 'Stop. Holding. Back.'");
         return;
+      }
+  
+      let roll = new Roll("2d6");
+      await roll.evaluate(); // No {async: true}
+      if (game.dice3d) {
+        await game.dice3d.showForRoll(roll);
+      }
+  
+      const diceResult = roll.dice[0].results.map(i => i.result);
+      const rollTotal = roll.total + logosCount;
+  
+      const outcome = rollTotal <= 6 ? game.i18n.localize(moveData.fail) :
+                      rollTotal <= 9 ? game.i18n.localize(moveData.partial) :
+                      game.i18n.localize(moveData.success);
+  
+      const powerAmount = logosCount;  // PWR is the number of Logos themes
+  
+      // Prepare display modifiers
+      const displayModifiers = `<span class="ch-modifier"><i class="fa-regular fa-mask"></i>${powerAmount}</span>`;
+  
+      // Compute displayRollTotal here
+      const displayRollTotal = rollTotal;
+  
+      const messageContent = await renderTemplate("modules/com-hud/templates/roll-chat-card.hbs", {
+        actorName: actor.name,
+        moveName: game.i18n.localize(moveData.name),
+        diceRolls: diceResult,
+        modifiers: displayModifiers,
+        rollTotal: displayRollTotal,
+        moveOutcome: outcome,
+        moveEffects: []
+      });
+  
+      ChatMessage.create({ content: messageContent });
+      await actor.setFlag("com-hud", "selectedTags", []);
+      return;
     }
-    
-    
-
-
+  
+    // Standard Moves
     const selectedTags = actor.getFlag("com-hud", "selectedTags") || [];
-const powerTags = selectedTags.filter(tag => tag.type === 'power').map(tag => tag.name);
-const weaknessTags = selectedTags.filter(tag => tag.type === 'weakness').map(tag => tag.name);
-
-// Base powerAmount calculation (power tags minus weakness tags)
-const basePowerAmount = Math.max(0, powerTags.length - weaknessTags.length);
-
-// Include status effects in rolls
-const selectedStatuses = actor.getFlag("com-hud", "statusEffects") || {};
-let statusModifier = 0;
-
-Object.keys(selectedStatuses).forEach(statusName => {
-  const statusItem = actor.items.find(i => i.name === statusName);
-  if (statusItem && statusItem.system.tier !== undefined) {
-    const tier = statusItem.system.tier;
-    if (selectedStatuses[statusName] === 'positive') statusModifier += tier;
-    if (selectedStatuses[statusName] === 'negative') statusModifier -= tier;
-  }
-});
-
+    const powerTags = selectedTags.filter(tag => tag.type === 'power').map(tag => tag.name);
+    const weaknessTags = selectedTags.filter(tag => tag.type === 'weakness').map(tag => tag.name);
+  
+    // Base powerAmount calculation (power tags minus weakness tags)
+    const basePowerAmount = Math.max(0, powerTags.length - weaknessTags.length);
+  
+    // Include status effects in rolls
+    const selectedStatuses = actor.getFlag("com-hud", "statusEffects") || {};
+    let statusModifier = 0;
+  
+    Object.keys(selectedStatuses).forEach(statusName => {
+      const statusItem = actor.items.find(i => i.name === statusName);
+      if (statusItem && statusItem.system.tier !== undefined) {
+        const tier = statusItem.system.tier;
+        if (selectedStatuses[statusName] === 'positive') statusModifier += tier;
+        if (selectedStatuses[statusName] === 'negative') statusModifier -= tier;
+      }
+    });
+  
     // Combine the base powerAmount with statusModifier
     const totalPowerAmount = basePowerAmount + statusModifier;
-
-    let roll = new Roll("2d6");
-    await roll.evaluate({async: true});
-    if (game.dice3d) {
-    await game.dice3d.showForRoll(roll);
+  
+    // Determine the sign and absolute value of the status modifier
+    let statusSign = '';
+    let statusValue = Math.abs(statusModifier);
+  
+    if (statusModifier > 0) {
+      statusSign = '+';
+    } else if (statusModifier < 0) {
+      statusSign = '-';
     }
-
+  
+    // Prepare display strings
+    const displayPowerAmount = `<span class="ch-modifier">+ <i class="fa-regular fa-bolt"></i>${basePowerAmount}</span>`;
+  
+    let displayStatusModifier = '';
+    if (statusModifier !== 0) {
+      displayStatusModifier = `<span class="ch-modifier">${statusSign}&nbsp;<i class="fa-regular fa-rectangle-list"></i> ${statusValue}</span>`;
+    }
+  
+    // Combine modifiers for display
+    let displayModifiers = displayPowerAmount;
+    if (displayStatusModifier) {
+      displayModifiers += ' ' + displayStatusModifier;
+    }
+  
+    let roll = new Roll("2d6");
+    await roll.evaluate(); // No {async: true}
+    if (game.dice3d) {
+      await game.dice3d.showForRoll(roll);
+    }
+  
     const diceResult = roll.dice[0].results.map(i => i.result);
     const rollTotal = roll.total + totalPowerAmount;
-
+  
+    // Compute displayRollTotal here
+    const displayRollTotal = isDynamite && rollTotal >= 12 ? `${rollTotal}<span class="dynamite-icon">\u{1F9E8}</span>` : rollTotal;
+  
     let outcome = "";
     let moveEffects = [];
     let juiceAmount = basePowerAmount;
-
+  
     if (rollTotal <= 6) {
-    outcome = game.i18n.localize(moveData.fail);
-    moveEffects = moveData.failEffects || [];
+      outcome = game.i18n.localize(moveData.fail);
+      moveEffects = moveData.failEffects || [];
     } else if (rollTotal >= 7 && rollTotal <= 9) {
-    outcome = game.i18n.localize(moveData.partial);
-    moveEffects = moveData.partialEffects || [];
+      outcome = game.i18n.localize(moveData.partial);
+      moveEffects = moveData.partialEffects || [];
     } else if (rollTotal >= 10) {
-    outcome = game.i18n.localize(moveData.success);
-    moveEffects = moveData.successEffects || [];
-    juiceAmount = Math.max(2, basePowerAmount);
+      outcome = game.i18n.localize(moveData.success);
+      moveEffects = moveData.successEffects || [];
+      juiceAmount = Math.max(2, basePowerAmount);
     }
-
+  
     if (isDynamite && rollTotal >= 12) {
-    outcome = game.i18n.localize(moveData.dynamite);
-    moveEffects = moveData.dynamiteEffects || [];
-    juiceAmount = Math.max(3, basePowerAmount);
+      outcome = game.i18n.localize(moveData.dynamite);
+      moveEffects = moveData.dynamiteEffects || [];
+      juiceAmount = Math.max(3, basePowerAmount);
     }
-
+  
     outcome = CityOfMistRolls.substituteText(outcome, basePowerAmount, juiceAmount);
-
-    // Display the totalPowerAmount which includes the status effects
-    const displayPowerAmount = `<span class="ch-modifier">+<i class="fa-regular fa-bolt"></i>${totalPowerAmount}: </span>`;
-
-    const displayRollTotal = isDynamite && rollTotal >= 12 ? `${rollTotal}\u{1F9E8}` : rollTotal;
-
+  
     const messageContent = await renderTemplate("modules/com-hud/templates/roll-chat-card.hbs", {
-    actorName: actor.name,
-    moveName: game.i18n.localize(moveData.name),
-    diceRolls: diceResult,
-    powerTags: powerTags,
-    weaknessTags: weaknessTags,
-    powerAmount: displayPowerAmount,  // Updated to show power and status
-    rollTotal: displayRollTotal,
-    moveOutcome: outcome,
-    moveEffects: moveEffects.map(effect => game.i18n.localize(effect))
+      actorName: actor.name,
+      moveName: game.i18n.localize(moveData.name),
+      diceRolls: diceResult,
+      powerTags: powerTags,
+      weaknessTags: weaknessTags,
+      modifiers: displayModifiers,
+      rollTotal: displayRollTotal,
+      moveOutcome: outcome,
+      moveEffects: moveEffects.map(effect => game.i18n.localize(effect))
     });
-
+  
     ChatMessage.create({ content: messageContent });
     await actor.setFlag("com-hud", "selectedTags", []);
-
-    };
-
+  };
+  
 
 // Combined substitution function
 CityOfMistRolls.substituteText = function(txt, powerAmount, juiceAmount) {
@@ -550,6 +583,3 @@ CityOfMistRolls.substituteText = function(txt, powerAmount, juiceAmount) {
     console.log("substituteText output:", result);
     return result;
 };
-
-// After substitution for the outcome text
-// outcome = CityOfMistRolls.substituteText(outcome, powerAmount, juiceAmount);
