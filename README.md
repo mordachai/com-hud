@@ -11,6 +11,7 @@
 - **Hotbar Integration**: Auto-loads macros for core moves and cinematic moves: core moves on page 1 and cinematic moves on page 2 of the Macro Hotbar
 - **Quick Roll Support**: Allows rolling with selected tags and themes without navigating away from the HUD
 - **Draggable**: Drag it around, see your game while playing it!
+- **Dynamite Moves Control Panel**: an easy way for the MC to determine which move is Dynamite for a character (see image below)
 
 ## Installation
 
@@ -49,6 +50,14 @@ _**Note:** Check how on the roll card in the chat window the total modifier (⚡
 ![image](https://github.com/user-attachments/assets/df4d8706-5794-45bd-ac39-d0c8a7258e47)
 
 The results and move effects will be automatically displayed in the chat.
+
+### Dynamite Move Control Panel
+
+To assign the _Dynamite!_ trait to any Core Move, run the **Dynamite Move Control Panel** macro from the **HUD Macros compendium**. 
+
+When a roll of 12+ is made with a _Dynamite_ move, the roll results will be upgraded and a 🧨 symbol will appear on the roll card in the chat.
+
+![image](https://github.com/user-attachments/assets/a03fe024-825f-47de-93ef-3f18c28faef6)
 
 ## Known Issues
 
