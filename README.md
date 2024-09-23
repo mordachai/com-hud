@@ -2,7 +2,7 @@
 
 **City of Mist: Character HUD** is a simple always-open, never-in-the-way HUD that allows players to select tags and statuses to be used on move rolls. No questions, no menus. Just select and roll using the moves in the hotbar. Fast and streamlined like any _action-packed game_ should be!
 
-![image](https://github.com/user-attachments/assets/7667f879-60de-4082-90b8-a84808ee8af6)
+![image](https://github.com/user-attachments/assets/c49e9371-8eea-43eb-9558-5f7ad958eed9)
 
 ## Features
 
@@ -55,13 +55,13 @@ The results and move effects will be automatically displayed in the chat.
 
 To assign the _Dynamite!_ trait to any Core Move, run the **Dynamite Move Control Panel** macro from the **HUD Macros compendium**. 
 
-When a roll of 12+ is made with a _Dynamite_ move, the roll results will be upgraded and a 🧨 symbol will appear on the roll card in the chat.
+When a roll of 12+ is made with a _Dynamite_ move, the roll effects will display the dynamite rules and a 🧨 symbol will appear on the roll card in the chat.
 
-![image](https://github.com/user-attachments/assets/a03fe024-825f-47de-93ef-3f18c28faef6)
+![image](https://github.com/user-attachments/assets/26816df4-fd6f-45f6-bbb8-6dacc3d95368)
+
 
 ## Known Issues
 
-- If you close the HUD you will need deselect than select your token again to bring the HUD back
 - The inputs are not bidirectional. Use the normal character sheet to register anything, the only purpose of the HUD is to make rolls easier and fast. Be especially aware of your burned tags.
 
 ## Compatibility
