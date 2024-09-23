@@ -33,7 +33,8 @@
   "esmodules": [
     "scripts/roll-move.js",
     "scripts/com-hud.js",
-    "scripts/load-macros.js"
+    "scripts/load-macros.js",
+    "scripts/dynamite-panel.js"
   ],
   "url": "https://github.com/mordachai/com-hud",
   "manifest": "https://github.com/mordachai/com-hud/raw/main/module.json",

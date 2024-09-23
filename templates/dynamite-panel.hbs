@@ -1,0 +1,32 @@
+<table class="dynamite-table">
+  <thead>
+    <tr>
+      <th>Move</th>
+      {{#each players}}
+        <th>
+          {{this.name}}<br>
+          <small>{{this.owner}}</small> <!-- Add owner name in parentheses -->
+        </th>
+      {{/each}}
+    </tr>
+  </thead>
+  <tbody>
+    {{#each moves}}
+      <tr>
+        <td>{{this.name}}</td>
+        {{#each ../players}}
+          <td>
+            <input 
+              type="checkbox" 
+              class="dynamite-toggle" 
+              data-player-id="{{this.id}}" 
+              data-move-id="{{../this.id}}"
+              {{#if (includes (getFlag this.id "com-hud" "dynamiteMoves") ../this.id)}}
+                checked
+              {{/if}}>
+          </td>
+        {{/each}}
+      </tr>
+    {{/each}}
+  </tbody>
+</table>

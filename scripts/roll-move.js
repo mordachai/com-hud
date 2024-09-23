@@ -45,7 +45,8 @@ CityOfMistRolls.moveConfig = {
             "CityOfMist.moves.CTG.8",
             "CityOfMist.moves.CTG.9"
         ],
-            useJuice: true
+            useJuice: true,
+            hasDynamite: true
     },
 
     "Convince": {
@@ -53,7 +54,8 @@ CityOfMistRolls.moveConfig = {
         fail: "CityOfMist.moves.genericFail",
         partial: "CityOfMist.moves.convince.partial",
         success: "CityOfMist.moves.convince.success",
-        dynamite: "CityOfMist.moves.convince.dynamite"
+        dynamite: "CityOfMist.moves.convince.dynamite",
+        hasDynamite: true
     },
 
     "Face Danger": {
@@ -66,7 +68,8 @@ CityOfMistRolls.moveConfig = {
             "CityOfMist.moves.FD.0",
             "CityOfMist.moves.FD.1"
         ],
-        usePWR: true
+        usePWR: true,
+        hasDynamite: true
     },
 
     "Go Toe To Toe": {
@@ -90,7 +93,8 @@ CityOfMistRolls.moveConfig = {
             "CityOfMist.moves.GTTT.1",
             "CityOfMist.moves.GTTT.2"
         ],
-        usePWR: true
+        usePWR: true,
+        hasDynamite: true
     },
 
     "Hit with All You Got": {
@@ -120,7 +124,8 @@ CityOfMistRolls.moveConfig = {
             "CityOfMist.moves.HWAYG.8",
             "CityOfMist.moves.HWAYG.9"
         ],
-        usePWR: true
+        usePWR: true,
+        hasDynamite: true
     },
 
     "Investigate": {
@@ -144,7 +149,8 @@ CityOfMistRolls.moveConfig = {
             "CityOfMist.moves.investigate.1",
             "CityOfMist.moves.investigate.2"
         ],
-        usePWR: true
+        usePWR: true,
+        hasDynamite: true
     },
 
     "Look Beyond the Mist": {
@@ -168,7 +174,8 @@ CityOfMistRolls.moveConfig = {
             "CityOfMist.moves.investigate.1",
             "CityOfMist.moves.investigate.2"
         ],
-        usePWR: true
+        usePWR: true,
+        hasDynamite: true
     },
 
     "Sneak Around": {
@@ -192,7 +199,8 @@ CityOfMistRolls.moveConfig = {
             "CityOfMist.moves.sneak.1",
             "CityOfMist.moves.sneak.2"
         ],
-        usePWR: true
+        usePWR: true,
+        hasDynamite: true
     },
 
     "Take the Risk": {
@@ -201,7 +209,8 @@ CityOfMistRolls.moveConfig = {
         partial: "CityOfMist.moves.TTR.partial",
         success: "CityOfMist.moves.TTR.success",
         dynamite: "CityOfMist.moves.TTR.dynamite",
-        usePWR: true
+        usePWR: true,
+        hasDynamite: true
     },
 
     "Stop. Holding. Back. (Significant)": {
@@ -316,6 +325,12 @@ CityOfMistRolls.rollMove = async function(moveName, isDynamite = false) {
         return;
     }
 
+    // Check if the move is set as dynamite for this actor (character)
+    const dynamiteMoves = actor.getFlag("com-hud", "dynamiteMoves") || [];
+    if (dynamiteMoves.includes(moveName)) {
+        isDynamite = true;
+    }
+
     console.log(`Rolling ${moveName} for ${actor.name}. Dynamite: ${isDynamite}`);
 
     // Exclude the __LOADOUT__ theme when calculating themes
@@ -349,7 +364,6 @@ CityOfMistRolls.rollMove = async function(moveName, isDynamite = false) {
         return;
     }
 
-    // "Look Beyond the Mist" Move (Mythos-based)
     // "Look Beyond the Mist" Move (Mythos-based)
     if (moveName === "Look Beyond the Mist") {
         const mythosCount = themes.filter(theme => {

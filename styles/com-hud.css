@@ -224,3 +224,52 @@
   color: black;
 }
 
+/*DYNAMITE PANEL*/
+
+/* Hide the default checkbox */
+.dynamite-toggle {
+  appearance: none;
+  width: 20px;  /* Adjust the size */
+  height: 20px;
+  cursor: pointer;
+  position: relative;
+
+}
+
+/* Styling for unchecked (false) state */
+.dynamite-toggle::before {
+  content: "-";
+  font-size: 20px;
+  color: #6c757d; /* Gray color */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+
+}
+
+/* Styling for checked (true) state */
+.dynamite-toggle:checked::before {
+  content: "🧨";
+  font-size: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f0f0f0;
+  border: 2px solid #f0f0f0; /* Same background color as firecracker */
+  border-radius: 50%; /* Optional: make it circular */
+}
+
+.dynamite-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dynamite-table th, .dynamite-table td {
+  padding: 8px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+}
+
+
